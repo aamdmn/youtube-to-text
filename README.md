@@ -54,7 +54,6 @@ uv run transcribe.py
 
 ## Limitations
 
-- Currently only supports English language transcription
 - Very large files may take longer to process
 - Requires stable internet connection for API calls
 

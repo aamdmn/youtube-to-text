@@ -112,7 +112,7 @@ def transcribe_audio(audio_path: str, source_url: str) -> Dict[str, Any]:
                     "audio": audio_file,  # Pass file object directly
                     "transcription": "plain text",
                     "translate": False,
-                    "language": "en",
+                    "language": "auto",
                     "temperature": 0,
                     "condition_on_previous_text": True,
                     "suppress_tokens": "-1",
@@ -127,7 +127,7 @@ def transcribe_audio(audio_path: str, source_url: str) -> Dict[str, Any]:
                 "audio": audio_path,
                 "transcription": "plain text",
                 "translate": False,
-                "language": "en",
+                "language": "auto",
                 "temperature": 0,
                 "condition_on_previous_text": True,
                 "suppress_tokens": "-1",
