@@ -1,0 +1,12 @@
+[project]
+name = "ogilvy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "replicate>=1.0.4",
+    "yt-dlp>=2023.12.30",
+    "requests>=2.31.0"
+]
