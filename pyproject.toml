@@ -8,5 +8,6 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "replicate>=1.0.4",
     "yt-dlp>=2023.12.30",
-    "requests>=2.31.0"
+    "requests>=2.31.0",
+    "pydub>=0.25.1"
 ]
