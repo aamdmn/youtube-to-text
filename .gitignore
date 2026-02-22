@@ -9,7 +9,13 @@ wheels/
 # Virtual environments
 .venv
 
+# Test cache
+.pytest_cache/
+
+# Environment
 .env
+
+# Runtime directories
 transcripts/
 temp/
 

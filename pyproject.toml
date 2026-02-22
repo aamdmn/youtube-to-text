@@ -1,7 +1,7 @@
 [project]
-name = "ogilvy"
-version = "0.1.0"
-description = "Add your description here"
+name = "youtube-to-text"
+version = "0.2.0"
+description = "Transcribe YouTube videos, audio URLs, and local audio files using OpenAI's gpt-4o-transcribe via Replicate."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -9,5 +9,16 @@ dependencies = [
     "replicate>=1.0.4",
     "yt-dlp>=2023.12.30",
     "requests>=2.31.0",
-    "pydub>=0.25.1"
+    "pydub>=0.25.1",
+]
+
+[project.scripts]
+transcribe = "src.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
 ]
