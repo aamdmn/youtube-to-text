@@ -8,8 +8,13 @@ from src.config import AUDIO_QUALITY, TEMP_DIR
 from src.utils import DownloadError, logger
 
 
-def download_from_youtube(url: str) -> str:
-    """Download audio from a YouTube URL. Returns path to the mp3 file."""
+def download_from_youtube(
+    url: str, cookies_from_browser: str | None = None
+) -> tuple[str, dict]:
+    """Download audio from a YouTube URL.
+
+    Returns (mp3_path, metadata) where metadata has 'title' and 'id' keys.
+    """
     logger.info("Downloading audio from YouTube...")
 
     ydl_opts = {
@@ -26,12 +31,20 @@ def download_from_youtube(url: str) -> str:
         "no_warnings": True,
     }
 
+    if cookies_from_browser:
+        ydl_opts["cookiesfrombrowser"] = (cookies_from_browser,)
+        logger.debug("Using cookies from browser: %s", cookies_from_browser)
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             path = ydl.prepare_filename(info).rsplit(".", 1)[0] + ".mp3"
             logger.info("Downloaded: %s", path)
-            return path
+            metadata = {
+                "title": info.get("title"),
+                "id": info.get("id"),
+            }
+            return path, metadata
     except Exception as e:
         raise DownloadError(f"YouTube download failed: {e}") from e
 

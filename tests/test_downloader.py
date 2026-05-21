@@ -15,11 +15,18 @@ class TestDownloadFromYoutube:
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-        mock_ydl.extract_info.return_value = {"title": "Test Video"}
+        mock_ydl.extract_info.return_value = {
+            "title": "Test Video",
+            "id": "test123",
+        }
         mock_ydl.prepare_filename.return_value = "temp/Test Video.webm"
 
-        result = download_from_youtube("https://www.youtube.com/watch?v=test")
-        assert result == "temp/Test Video.mp3"
+        path, metadata = download_from_youtube(
+            "https://www.youtube.com/watch?v=test"
+        )
+        assert path == "temp/Test Video.mp3"
+        assert metadata["title"] == "Test Video"
+        assert metadata["id"] == "test123"
 
     @patch("src.downloader.yt_dlp.YoutubeDL")
     def test_failure_raises(self, mock_ydl_cls):
@@ -27,6 +34,27 @@ class TestDownloadFromYoutube:
 
         with pytest.raises(DownloadError, match="YouTube download failed"):
             download_from_youtube("https://www.youtube.com/watch?v=bad")
+
+    @patch("src.downloader.yt_dlp.YoutubeDL")
+    def test_cookies_from_browser(self, mock_ydl_cls, tmp_path):
+        mock_ydl = MagicMock()
+        mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
+        mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
+
+        mock_ydl.extract_info.return_value = {
+            "title": "Test Video",
+            "id": "test123",
+        }
+        mock_ydl.prepare_filename.return_value = "temp/Test Video.webm"
+
+        download_from_youtube(
+            "https://www.youtube.com/watch?v=test",
+            cookies_from_browser="chrome",
+        )
+
+        call_args = mock_ydl_cls.call_args
+        opts = call_args[0][0]
+        assert opts["cookiesfrombrowser"] == ("chrome",)
 
 
 class TestDownloadFromUrl:

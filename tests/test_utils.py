@@ -59,3 +59,24 @@ class TestGenerateFilename:
         names = {generate_filename() for _ in range(20)}
         # With 4-char random suffix, collisions in 20 calls are extremely unlikely.
         assert len(names) == 20
+
+    def test_with_video_id_only(self):
+        name = generate_filename(video_id="abc123")
+        assert name == "transcript_abc123"
+
+    def test_with_video_id_and_title(self):
+        name = generate_filename(
+            video_id="abc123", title="How to Build a House!"
+        )
+        assert name == "transcript_abc123_how-to-build-a-house"
+
+    def test_title_slug_is_truncated(self):
+        long_title = "A" * 100
+        name = generate_filename(video_id="xyz", title=long_title)
+        # slug should be truncated to 50 chars
+        slug_part = name.split("_", 2)[2]
+        assert len(slug_part) <= 50
+
+    def test_no_video_id_uses_timestamp(self):
+        name = generate_filename(title="Ignored Without Video ID")
+        assert re.match(r"transcript_\d{8}_\d{6}_[a-z0-9]{4}$", name)

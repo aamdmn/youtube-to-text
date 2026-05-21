@@ -19,52 +19,60 @@ from src.utils import (
     generate_filename,
     is_remote_url,
     is_youtube_url,
+    slugify,
     logger,
     setup_logging,
 )
 
 
-def _save_transcript(text: str, source: str) -> str:
+def _save_transcript(
+    text: str, source: str, video_metadata: dict | None = None
+) -> str:
     """Save transcription text and metadata. Returns the text file path."""
-    stem = generate_filename()
+    stem = generate_filename(
+        title=video_metadata.get("title") if video_metadata else None,
+        video_id=video_metadata.get("id") if video_metadata else None,
+    )
 
     text_path = TRANSCRIPTS_DIR / f"{stem}.txt"
     meta_path = TRANSCRIPTS_DIR / f"{stem}.json"
 
     text_path.write_text(text, encoding="utf-8")
-    meta_path.write_text(
-        json.dumps(
-            {
-                "source": source,
-                "is_youtube": is_youtube_url(source),
-                "word_count": len(text.split()),
-                "timestamp": stem.split("_", 1)[1],  # everything after prefix
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
+    meta = {
+        "source": source,
+        "is_youtube": is_youtube_url(source),
+        "word_count": len(text.split()),
+    }
+    if video_metadata:
+        meta["title"] = video_metadata.get("title")
+        meta["video_id"] = video_metadata.get("id")
+    meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
     logger.info("Saved: %s", text_path)
     return str(text_path)
 
 
-def _resolve_audio(source: str) -> tuple[str, bool]:
+def _resolve_audio(
+    source: str, cookies_from_browser: str | None = None
+) -> tuple[str, bool, dict | None]:
     """Download or locate the audio file.
 
-    Returns (local_path, needs_cleanup).
+    Returns (local_path, needs_cleanup, video_metadata).
     """
     if is_youtube_url(source):
-        return download_from_youtube(source), True
+        path, metadata = download_from_youtube(
+            source, cookies_from_browser=cookies_from_browser
+        )
+        return path, True, metadata
 
     if is_remote_url(source):
-        return download_from_url(source), True
+        return download_from_url(source), True, None
 
     # Assume local file path.
     if not os.path.isfile(source):
         logger.error("File not found: %s", source)
         sys.exit(1)
-    return source, False
+    return source, False, None
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -94,6 +102,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "-v", "--verbose",
         action="store_true",
         help="Enable debug logging",
+    )
+    parser.add_argument(
+        "--cookies-from-browser",
+        type=str,
+        default=None,
+        metavar="BROWSER",
+        help="Browser to extract cookies from for YouTube auth "
+             "(e.g., chrome, firefox, safari, edge). "
+             "Use this if you see 'Sign in to confirm you're not a bot'.",
     )
     return parser
 
@@ -141,16 +158,19 @@ def main(argv: list[str] | None = None) -> None:
 
     audio_path: str | None = None
     needs_cleanup = False
+    video_metadata = None
 
     try:
-        audio_path, needs_cleanup = _resolve_audio(source)
+        audio_path, needs_cleanup, video_metadata = _resolve_audio(
+            source, cookies_from_browser=args.cookies_from_browser
+        )
 
         start = time.time()
         text = transcribe(audio_path)
         elapsed = time.time() - start
         logger.info("Completed in %.1fs", elapsed)
 
-        _save_transcript(text, source)
+        _save_transcript(text, source, video_metadata)
 
     except (DownloadError, TranscriptionError, AudioProcessingError) as e:
         logger.error("Error: %s", e)

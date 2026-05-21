@@ -2,6 +2,7 @@
 
 import logging
 import random
+import re
 import string
 from datetime import datetime
 from urllib.parse import urlparse
@@ -43,11 +44,38 @@ def is_remote_url(url: str) -> bool:
         return False
 
 
-def generate_filename(prefix: str = "transcript") -> str:
-    """Generate a unique filename using timestamp + random suffix.
+def slugify(text: str, max_length: int = 50) -> str:
+    """Convert text to a filesystem-safe slug.
 
-    Returns a stem like 'transcript_20260221_143022_a3f1' (no extension).
+    Lowercases, replaces non-alphanumeric chars with hyphens, and trims.
     """
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    text = text.strip("-")
+    return text[:max_length].rstrip("-")
+
+
+def generate_filename(
+    prefix: str = "transcript",
+    title: str | None = None,
+    video_id: str | None = None,
+) -> str:
+    """Generate a unique filename.
+
+    For YouTube videos with metadata:
+        transcript_{video_id}_{title-slug}
+    For other sources:
+        transcript_{timestamp}_{random}
+
+    Returns a stem (no extension).
+    """
+    if video_id:
+        parts = [prefix, video_id]
+        if title:
+            parts.append(slugify(title))
+        return "_".join(parts)
+
+    # Fallback: timestamp + random suffix
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
     return f"{prefix}_{timestamp}_{suffix}"
